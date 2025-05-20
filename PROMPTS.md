@@ -23,3 +23,7 @@ The topmost platform should have a little flag, and when the square touches the 
 1. Make the screen shake for a second when the player reaches the goal.
 
 1. Can you please add the ability to double jump?
+
+1. Have the screen scroll up as the fish ascends the platforms, and add about 20 more platforms. The flag should still be on the topmost platform.
+
+1. Have the camera follow the fish (with a slight spring delay) as it moves around the world.

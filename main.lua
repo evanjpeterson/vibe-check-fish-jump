@@ -35,25 +35,53 @@ local player = {
     isBlinking = false                -- Whether the fish is currently blinking
 }
 
+-- Camera system that follows the player with spring delay
+local camera = {
+    x = 0,           -- horizontal offset
+    y = 0,           -- vertical offset
+    targetX = 0,     -- target horizontal position
+    targetY = 0,     -- target vertical position
+    smoothSpeed = 4, -- how quickly camera follows target (higher = faster)
+    worldWidth = 800 -- total width of the game world
+}
+
 -- Define the platforms (including the main surface)
 local platforms = {
     -- Main surface
-    { x = 0,   y = 550, width = 800, height = 10 },
-    -- Platforms (x, y, width)
-    { x = 200, y = 450, width = 150, height = 10 },
-    { x = 400, y = 380, width = 150, height = 10 },
-    { x = 150, y = 320, width = 150, height = 10 },
-    { x = 450, y = 250, width = 150, height = 10 },
-    { x = 300, y = 180, width = 150, height = 10 },
-    { x = 100, y = 120, width = 150, height = 10 }
+    { x = 0,   y = 550,   width = 800, height = 10 },
+    -- Lower platforms
+    { x = 200, y = 450,   width = 150, height = 10 },
+    { x = 400, y = 380,   width = 150, height = 10 },
+    { x = 150, y = 320,   width = 150, height = 10 },
+    { x = 450, y = 250,   width = 150, height = 10 },
+    { x = 300, y = 180,   width = 150, height = 10 },
+    { x = 100, y = 120,   width = 150, height = 10 },
+    -- Additional platforms reaching higher
+    { x = 350, y = 50,    width = 150, height = 10 },
+    { x = 200, y = -20,   width = 150, height = 10 },
+    { x = 400, y = -90,   width = 150, height = 10 },
+    { x = 150, y = -160,  width = 150, height = 10 },
+    { x = 450, y = -230,  width = 120, height = 10 },
+    { x = 250, y = -300,  width = 150, height = 10 },
+    { x = 350, y = -370,  width = 150, height = 10 },
+    { x = 180, y = -440,  width = 150, height = 10 },
+    { x = 400, y = -510,  width = 120, height = 10 },
+    { x = 250, y = -580,  width = 150, height = 10 },
+    { x = 100, y = -650,  width = 150, height = 10 },
+    { x = 300, y = -720,  width = 120, height = 10 },
+    { x = 450, y = -790,  width = 150, height = 10 },
+    { x = 200, y = -860,  width = 150, height = 10 },
+    { x = 350, y = -930,  width = 150, height = 10 },
+    { x = 150, y = -1000, width = 200, height = 10 },
+    { x = 330, y = -1070, width = 150, height = 10 }
 }
 
 local surface = platforms[1]
 
--- Define the victory flag
+-- Define the victory flag (on the topmost platform)
 local flag = {
-    x = 170,
-    y = 70,
+    x = 400,
+    y = -1120,
     width = 10,
     height = 50,
     color = { 1, 0, 0 }, -- Red
@@ -88,8 +116,10 @@ local function createConfettiParticle()
         { 1, 0.5, 0 }  -- orange
     }
 
+    -- Generate particles in screen space, not world space
+    local width, height = love.graphics.getDimensions()
     return {
-        x = love.math.random(0, love.graphics.getWidth()),
+        x = love.math.random(0, width),
         y = -10,
         width = love.math.random(5, 15),
         height = love.math.random(5, 15),
@@ -150,6 +180,22 @@ function love.update(dt)
     player.yVelocity = player.yVelocity + player.gravity * dt
     player.y = player.y + player.yVelocity * dt
 
+    -- Update camera target position to follow player
+    -- Center the player horizontally and keep them in the lower portion vertically
+    local screenWidth, screenHeight = love.graphics.getDimensions()
+    camera.targetX = -player.x + screenWidth * 0.5
+    -- Keep the player in the lower third of the screen (for vertical scrolling)
+    camera.targetY = -player.y + screenHeight * 0.7
+
+    -- Constrain horizontal camera to keep world in view
+    camera.targetX = math.min(0, math.max(-camera.worldWidth + screenWidth, camera.targetX))
+
+    -- Smooth camera movement with spring delay
+    local cameraXDiff = camera.targetX - camera.x
+    local cameraYDiff = camera.targetY - camera.y
+    camera.x = camera.x + cameraXDiff * math.min(dt * camera.smoothSpeed, 1)
+    camera.y = camera.y + cameraYDiff * math.min(dt * camera.smoothSpeed, 1)
+
     -- Check for collision with platforms
     player.isJumping = true -- Assume falling until proven otherwise
     for _, platform in ipairs(platforms) do
@@ -184,9 +230,8 @@ function love.update(dt)
         end
     end
 
-    -- Keep the player within the window bounds (horizontally)
-    local windowWidth = love.graphics.getWidth()
-    player.x = math.max(0, math.min(player.x, windowWidth - player.width))
+    -- Keep the player within the world bounds (horizontally)
+    player.x = math.max(0, math.min(player.x, camera.worldWidth - player.width))
 
     -- Update bob animation when not jumping
     if not player.isJumping then
@@ -245,7 +290,8 @@ function love.update(dt)
             p.rotation = p.rotation + p.rotationSpeed * dt
 
             -- Remove particles that are off-screen
-            if p.y > love.graphics.getHeight() + 50 then
+            local width, height = love.graphics.getDimensions()
+            if p.y > height + 50 then
                 table.remove(confetti.particles, i)
             end
         end
@@ -279,6 +325,10 @@ function love.keypressed(key)
         player.x = 100
         player.y = 450
         player.yVelocity = 0
+        camera.x = 0
+        camera.y = 0
+        camera.targetX = 0
+        camera.targetY = 0
         flag.reached = false
         confetti.active = false
         confetti.particles = {}
@@ -292,10 +342,30 @@ end
 
 -- Draw function for rendering
 function love.draw()
+    -- Save current state for UI elements
+    love.graphics.push()
+
+    -- Apply screen shake if active
+    if screenShake.active then
+        local shakeFactor = math.max(0, 1 - screenShake.timer / screenShake.duration)
+        local dx = love.math.random(-screenShake.intensity, screenShake.intensity) * shakeFactor
+        local dy = love.math.random(-screenShake.intensity, screenShake.intensity) * shakeFactor
+        love.graphics.translate(dx, dy)
+    end
+
+    -- Apply camera transformation
+    love.graphics.translate(camera.x, camera.y)
+
     -- Draw checkered background
     local width, height = love.graphics.getDimensions()
-    for y = 0, math.ceil(height / background.squareSize) do
-        for x = 0, math.ceil(width / background.squareSize) do
+    local visibleTilesX = math.ceil(width / background.squareSize) + 2
+    local visibleTilesY = math.ceil(height / background.squareSize) + 2
+
+    local startX = math.floor(-camera.x / background.squareSize)
+    local startY = math.floor(-camera.y / background.squareSize)
+
+    for y = startY, startY + visibleTilesY do
+        for x = startX, startX + visibleTilesX do
             -- Determine which color to use (alternating pattern)
             local colorIndex = ((x + y) % 2) + 1
             love.graphics.setColor(background.colors[colorIndex])
@@ -309,14 +379,6 @@ function love.draw()
                 background.squareSize
             )
         end
-    end
-
-    -- Apply screen shake if active
-    if screenShake.active then
-        local shakeFactor = math.max(0, 1 - screenShake.timer / screenShake.duration)
-        local dx = love.math.random(-screenShake.intensity, screenShake.intensity) * shakeFactor
-        local dy = love.math.random(-screenShake.intensity, screenShake.intensity) * shakeFactor
-        love.graphics.translate(dx, dy)
     end
 
     -- Draw the platforms
@@ -421,7 +483,12 @@ function love.draw()
     -- Restore the transformation state
     love.graphics.pop()
 
-    -- Draw the confetti particles
+    -- End camera transformation
+    love.graphics.pop()
+
+    -- Draw screen-space UI elements (not affected by camera)
+
+    -- Draw the confetti particles (in screen space)
     for _, p in ipairs(confetti.particles) do
         love.graphics.setColor(p.color)
         love.graphics.push()

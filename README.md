@@ -9,3 +9,5 @@ My friend, who is not a programmer but a scientist, discussed some app ideas he'
 This prompted me to download Zed, after which I provided mine Github credentials to it in exchange for access to the free tier and some basic AI agentic coding utility.
 
 Ten prompts later and I am the proud owner of a platforming game that CPE-123 students would be slavering over were we a mere ten years in the past.
+
+To be continued...

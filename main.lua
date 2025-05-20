@@ -3,17 +3,27 @@
 
 -- Define background pattern
 local background = {
-    squareSize = 40,       -- Size of each checkerboard square
+    squareSize = 40, -- Size of each checkerboard square
     colors = {
-        { 0.3, 0.3, 0.4 }, -- Light square
-        { 0.2, 0.2, 0.3 }  -- Dark square
+        { 140 / 255, 180 / 255, 206 / 255 },
+        { 160 / 255, 193 / 255, 215 / 255 },
     }
+}
+
+-- Define water properties
+local water = {
+    y = 550,                        -- y position (same as surface platform)
+    height = 1000,                  -- height of water area
+    color = { 0.2, 0.4, 0.9, 0.7 }, -- blue color with transparency
+    waveAmplitude = 4,              -- wave height
+    waveFrequency = 0.1,            -- wave frequency
+    waveTimer = 0                   -- timer for wave animation
 }
 
 -- Define the player (fish)
 local player = {
-    x = 150,                          -- starting x position
-    y = 300,                          -- starting y position (will be adjusted to sit on the surface)
+    x = 50,                           -- starting x position
+    y = 450,                          -- starting y position (will be adjusted to sit on the surface)
     width = 60,                       -- fish width
     height = 30,                      -- fish height
     speed = 300,                      -- horizontal movement speed (pixels per second)
@@ -22,12 +32,15 @@ local player = {
     isJumping = false,                -- tracking if player is in the air
     canDoubleJump = false,            -- ability to perform a second jump
     hasDoubleJumped = false,          -- tracking if player has used double jump
+    rotation = 0,                     -- current rotation angle (for somersault)
+    somersaulting = false,            -- whether the fish is currently doing a somersault
+    somersaultSpeed = 20,             -- rotation speed during somersault (radians per second)
     gravity = 1800,                   -- gravity acceleration (pixels per second^2)
     direction = -1,                   -- 1 for right, -1 for left (reversed now)
     bobTimer = 0,                     -- Timer for bobbing animation
     bobAmount = 3,                    -- How much to bob up and down
     colorTimer = 0,                   -- Timer for color strobing effect
-    currentColor = { 0.2, 0.4, 1.0 }, -- Default blue color
+    currentColor = { 0.8, 0.4, 0.3 }, -- Default blue color
     blinkTimer = 0,                   -- Timer for blinking
     blinkDuration = 0.15,             -- How long the blink lasts in seconds
     blinkInterval = 3,                -- Base time between blinks in seconds
@@ -48,40 +61,32 @@ local camera = {
 -- Define the platforms (including the main surface)
 local platforms = {
     -- Main surface
-    { x = 0,   y = 550,   width = 800, height = 10 },
+    { x = 0,   y = 560,  width = 800, height = 30 },
     -- Lower platforms
-    { x = 200, y = 450,   width = 150, height = 10 },
-    { x = 400, y = 380,   width = 150, height = 10 },
-    { x = 150, y = 320,   width = 150, height = 10 },
-    { x = 450, y = 250,   width = 150, height = 10 },
-    { x = 300, y = 180,   width = 150, height = 10 },
-    { x = 100, y = 120,   width = 150, height = 10 },
-    -- Additional platforms reaching higher
-    { x = 350, y = 50,    width = 150, height = 10 },
-    { x = 200, y = -20,   width = 150, height = 10 },
-    { x = 400, y = -90,   width = 150, height = 10 },
-    { x = 150, y = -160,  width = 150, height = 10 },
-    { x = 450, y = -230,  width = 120, height = 10 },
-    { x = 250, y = -300,  width = 150, height = 10 },
-    { x = 350, y = -370,  width = 150, height = 10 },
-    { x = 180, y = -440,  width = 150, height = 10 },
-    { x = 400, y = -510,  width = 120, height = 10 },
-    { x = 250, y = -580,  width = 150, height = 10 },
-    { x = 100, y = -650,  width = 150, height = 10 },
-    { x = 300, y = -720,  width = 120, height = 10 },
-    { x = 450, y = -790,  width = 150, height = 10 },
-    { x = 200, y = -860,  width = 150, height = 10 },
-    { x = 350, y = -930,  width = 150, height = 10 },
-    { x = 150, y = -1000, width = 200, height = 10 },
-    { x = 330, y = -1070, width = 150, height = 10 }
+    { x = 200, y = 450,  width = 150, height = 30 },
+    { x = 400, y = 380,  width = 150, height = 30 },
+    { x = 150, y = 320,  width = 150, height = 30 },
+    -- Mid platforms
+    { x = 450, y = 250,  width = 150, height = 30 },
+    { x = 300, y = 180,  width = 150, height = 30 },
+    { x = 100, y = 120,  width = 150, height = 30 },
+    { x = 350, y = 50,   width = 150, height = 30 },
+    -- Higher platforms
+    { x = 200, y = -20,  width = 150, height = 30 },
+    { x = 400, y = -90,  width = 150, height = 30 },
+    { x = 150, y = -160, width = 150, height = 30 },
+    { x = 450, y = -300, width = 150, height = 30 },
+    { x = 250, y = -440, width = 150, height = 30 },
+    { x = 350, y = -580, width = 150, height = 30 },
+    { x = 250, y = -690, width = 150, height = 30 }
 }
 
 local surface = platforms[1]
 
 -- Define the victory flag (on the topmost platform)
 local flag = {
-    x = 400,
-    y = -1120,
+    x = 300,
+    y = -740,
     width = 10,
     height = 50,
     color = { 1, 0, 0 }, -- Red
@@ -134,7 +139,7 @@ end
 -- Load function runs once at the beginning
 function love.load()
     -- Position the player to sit on top of the surface
-    player.y = surface.y - player.height * 2
+    player.y = surface.y - player.height * 5
 
     -- Seed the random number generator for blinking
     love.math.setRandomSeed(os.time())
@@ -210,6 +215,8 @@ function love.update(dt)
             player.isJumping = false
             player.canDoubleJump = false   -- Reset double jump when landing
             player.hasDoubleJumped = false -- Reset double jump flag
+            player.somersaulting = false   -- Stop somersaulting when landing
+            player.rotation = 0            -- Reset rotation
             break
         end
     end
@@ -238,6 +245,18 @@ function love.update(dt)
         player.bobTimer = player.bobTimer + dt * 5 -- Control bob speed
         -- No need to reset the timer, we're using sine which repeats
     end
+
+    -- Update somersault animation
+    if player.somersaulting then
+        player.rotation = player.rotation + player.somersaultSpeed * dt
+        if player.rotation >= math.pi * 2 then
+            player.rotation = 0
+            player.somersaulting = false
+        end
+    end
+
+    -- Update water wave animation
+    water.waveTimer = water.waveTimer + dt
 
     -- Update color strobing if victory is achieved
     if flag.reached then
@@ -317,6 +336,8 @@ function love.keypressed(key)
             player.yVelocity = player.jumpPower * 0.8 -- Slightly weaker second jump
             player.hasDoubleJumped = true
             player.canDoubleJump = false
+            player.somersaulting = true
+            player.rotation = 0
         end
     end
 
@@ -325,6 +346,8 @@ function love.keypressed(key)
         player.x = 100
         player.y = 450
         player.yVelocity = 0
+        player.rotation = 0
+        player.somersaulting = false
         camera.x = 0
         camera.y = 0
         camera.targetX = 0
@@ -381,10 +404,60 @@ function love.draw()
         end
     end
 
-    -- Draw the platforms
-    love.graphics.setColor(0.8, 0.8, 0.8)
+    -- Draw the water area below the surface
+    love.graphics.setColor(water.color)
+
+    -- Draw water with a wavy top surface
+    local waterWidth = camera.worldWidth
+    local waterX = 0
+
+    -- Create vertices for the wavy water surface
+    local vertices = {}
+    local segments = 40
+    local segmentWidth = waterWidth / segments
+
+    -- Top wave vertices
+    for i = 0, segments do
+        local x = waterX + i * segmentWidth
+        local waveOffset = math.sin(x * water.waveFrequency + water.waveTimer * 2) * water.waveAmplitude
+        table.insert(vertices, x)
+        table.insert(vertices, water.y + waveOffset)
+    end
+
+    -- Bottom vertices to complete the polygon
+    table.insert(vertices, waterX + waterWidth)
+    table.insert(vertices, water.y + water.height)
+    table.insert(vertices, waterX)
+    table.insert(vertices, water.y + water.height)
+
+    -- Draw water as a polygon
+    love.graphics.polygon("fill", vertices)
+
+    -- Draw the platforms as logs (series of circles)
+    love.graphics.setColor(0.8, 0.4, 0.1) -- Orange-brown color for logs
     for _, platform in ipairs(platforms) do
-        love.graphics.rectangle("fill", platform.x, platform.y, platform.width, platform.height)
+        local numCircles = math.floor(platform.width / (platform.height * 0.9))
+        local circleRadius = platform.height / 2
+        local circleSpacing = platform.width / numCircles
+
+        for i = 0, numCircles - 1 do
+            local circleX = platform.x + i * circleSpacing + circleSpacing / 2
+            local circleY = platform.y + circleRadius
+
+            -- Draw the main circle of the log
+            love.graphics.circle("fill", circleX, circleY, circleRadius)
+
+            -- Draw darker end cap (tree rings)
+            love.graphics.setColor(0.6, 0.3, 0.1)
+            love.graphics.circle("fill", circleX, circleY, circleRadius * 0.8)
+
+            -- Draw lighter inner part
+            love.graphics.setColor(0.9, 0.5, 0.2)
+            love.graphics.circle("fill", circleX, circleY, circleRadius * 0.5)
+
+            -- Reset color for next circle
+            love.graphics.setColor(0.8, 0.4, 0.1)
+        end
     end
 
     -- Draw the flag pole
@@ -411,8 +484,9 @@ function love.draw()
         bobOffset = (math.sin(player.bobTimer) - 1) * player.bobAmount
     end
 
-    -- Move to fish position and flip if needed
+    -- Move to fish position, apply rotation for somersault, and flip if needed
     love.graphics.translate(player.x + player.width / 2, player.y + player.height / 2 + bobOffset)
+    love.graphics.rotate(player.rotation)
     love.graphics.scale(player.direction, 1)
 
     -- Fish body (oval)

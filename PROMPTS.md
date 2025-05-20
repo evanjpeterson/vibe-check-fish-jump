@@ -27,3 +27,7 @@ The topmost platform should have a little flag, and when the square touches the 
 1. Have the screen scroll up as the fish ascends the platforms, and add about 20 more platforms. The flag should still be on the topmost platform.
 
 1. Have the camera follow the fish (with a slight spring delay) as it moves around the world.
+
+1. Let's reduce the total number of platforms by 10.
+And, have the fish do a front somersault whenever it double jumps.
+And, can we make the platforms visually a series of little orange-brown circles, so they appear more like logs that have been laid on their side?

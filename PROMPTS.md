@@ -6,7 +6,6 @@ The player should be able to press the spacebar to make the square jump.
 When the square jumps, it should fall back to the surface using physics that model the real world.
 
 1. Can you add a few platforms above the main surface, spread out so that the player can jump between them and climb up the screen.
-The topmost platform should have a little flag, and when the square touches the flag, a fun victory effect with confetti should play.
 
 1. The topmost platform should have a little flag, and when the square touches the flag, a fun victory effect with confetti should play.
 
@@ -16,7 +15,7 @@ The topmost platform should have a little flag, and when the square touches the 
 
 1. Flip the direction the fish faces when it is moving, and make it bob up and down while it is not jumping.
 
-1. After reaching the flag, draw a little crown on top of the fish, and make the fish strobe different colors.7.
+1. After reaching the flag, draw a little crown on top of the fish, and make the fish strobe different colors.
 
 1. Make the fish blink every few seconds, with a random variation.
 

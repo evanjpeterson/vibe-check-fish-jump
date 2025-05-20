@@ -6,7 +6,6 @@ The player should be able to press the spacebar to make the square jump.
 When the square jumps, it should fall back to the surface using physics that model the real world.
 
 1. Can you add a few platforms above the main surface, spread out so that the player can jump between them and climb up the screen.
-The topmost platform should have a little flag, and when the square touches the flag, a fun victory effect with confetti should play.
 
 1. The topmost platform should have a little flag, and when the square touches the flag, a fun victory effect with confetti should play.
 

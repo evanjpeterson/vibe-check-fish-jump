@@ -20,7 +20,9 @@ local player = {
     yVelocity = 0,                    -- vertical velocity
     jumpPower = -600,                 -- jump strength (negative because y-axis goes down)
     isJumping = false,                -- tracking if player is in the air
-    gravity = 1200,                   -- gravity acceleration (pixels per second^2)
+    canDoubleJump = false,            -- ability to perform a second jump
+    hasDoubleJumped = false,          -- tracking if player has used double jump
+    gravity = 1800,                   -- gravity acceleration (pixels per second^2)
     direction = -1,                   -- 1 for right, -1 for left (reversed now)
     bobTimer = 0,                     -- Timer for bobbing animation
     bobAmount = 3,                    -- How much to bob up and down
@@ -160,6 +162,8 @@ function love.update(dt)
             player.y = platform.y - player.height
             player.yVelocity = 0
             player.isJumping = false
+            player.canDoubleJump = false   -- Reset double jump when landing
+            player.hasDoubleJumped = false -- Reset double jump flag
             break
         end
     end
@@ -255,10 +259,19 @@ end
 
 -- Handle key presses
 function love.keypressed(key)
-    -- Jump when spacebar is pressed and player is on the ground
-    if key == "space" and not player.isJumping then
-        player.yVelocity = player.jumpPower
-        player.isJumping = true
+    -- Jump when spacebar is pressed
+    if key == "space" then
+        if not player.isJumping then
+            -- First jump
+            player.yVelocity = player.jumpPower
+            player.isJumping = true
+            player.canDoubleJump = true -- Enable double jump
+        elseif player.canDoubleJump and not player.hasDoubleJumped then
+            -- Double jump in mid-air
+            player.yVelocity = player.jumpPower * 0.8 -- Slightly weaker second jump
+            player.hasDoubleJumped = true
+            player.canDoubleJump = false
+        end
     end
 
     -- Restart the game with R key
@@ -420,7 +433,7 @@ function love.draw()
 
     -- Draw instructions and status
     love.graphics.setColor(1, 1, 1)
-    love.graphics.print("Left/Right: Move   Space: Jump   R: Restart   Escape: Quit", 10, 10)
+    love.graphics.print("Left/Right: Move   Space: Jump/Double-Jump   R: Restart   Escape: Quit", 10, 10)
 
     -- Display victory message
     if flag.reached then

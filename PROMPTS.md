@@ -21,3 +21,5 @@ The topmost platform should have a little flag, and when the square touches the 
 1. Make the fish blink every few seconds, with a random variation.
 
 1. Make the screen shake for a second when the player reaches the goal.
+
+1. Can you please add the ability to double jump?

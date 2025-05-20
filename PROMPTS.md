@@ -15,7 +15,7 @@ When the square jumps, it should fall back to the surface using physics that mod
 
 1. Flip the direction the fish faces when it is moving, and make it bob up and down while it is not jumping.
 
-1. After reaching the flag, draw a little crown on top of the fish, and make the fish strobe different colors.7.
+1. After reaching the flag, draw a little crown on top of the fish, and make the fish strobe different colors.
 
 1. Make the fish blink every few seconds, with a random variation.
 

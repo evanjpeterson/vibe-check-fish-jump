@@ -1,4 +1,4 @@
-### Fish Jump
+## Fish Ladder 🐟
 
 The year was 2025, on a Tuesday, and previously I had only heard murmurs and whispers of something referred to as 'vibe coding'.
 

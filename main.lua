@@ -331,7 +331,7 @@ function love.keypressed(key)
             player.yVelocity = player.jumpPower
             player.isJumping = true
             player.canDoubleJump = true -- Enable double jump
-        elseif player.canDoubleJump and not player.hasDoubleJumped then
+        elseif (player.canDoubleJump and not player.hasDoubleJumped) or (flag.reached) then
             -- Double jump in mid-air
             player.yVelocity = player.jumpPower * 0.8 -- Slightly weaker second jump
             player.hasDoubleJumped = true
